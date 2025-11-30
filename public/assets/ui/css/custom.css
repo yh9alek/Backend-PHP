@@ -1,0 +1,257 @@
+@import url('./sweet-alert-2.css');
+@import url('./toastify.css');
+
+:root {
+
+    --primary: #4271d8;
+    --btn-hover:  color-mix(in srgb, var(--primary) 88%, #000 12%);
+    --btn-active: color-mix(in srgb, var(--primary) 75%, #000 25%);
+
+    --bs-body-bg-custom: #1C74E8;
+
+    --bg-dark-custom: #16181D;
+    --bg-dark-second: #17191E;
+
+    --bs-card-border-color-custom: #1a1d24;
+    --bs-card-box-shadow-custom: 0 0 10px 0 #0c1016cf;
+    /* --bs-secondary-bg-custom: #131519;  */
+
+    --disabled-color-custom: #4D5564;
+
+}
+
+.ast {
+    font-weight: bolder;
+    color: #754848;
+}
+
+.btn {
+    border: none;
+}
+
+.page-content {
+    max-width: 1350px;   
+}
+
+.system-title {
+    color: #fff;
+    font-size: 25px;
+    font-weight: bold;
+    line-height: 60px;
+}
+
+.form-control {
+    background-color: #1B1D24;
+    border: 1px solid #292d368e;
+}
+
+.form-control::placeholder {
+    color: #3f4555;
+}
+
+.label-campos-o {
+    color: #616c81;
+    margin-top: 20px;
+}
+
+.form-control:disabled {
+    border: 1px solid #1A1D24;
+}
+
+[data-bs-theme=light] {
+
+    .ast {
+        font-weight: bolder;
+        color: #af4e4e;
+    }
+
+    --disabled-color-custom: gray;
+    --bs-secondary-bg-custom: #E7ECF1;
+
+    .form-control {
+        color: #505050;
+        background-color: #fff;
+        border: 1px solid #cfd5dd;
+    }
+
+    .form-control:disabled {
+        background-color: #E7ECF1;
+    }
+
+    .form-control::placeholder {
+        color: #a1a9be;
+    }
+
+    .form-control.is-valid,
+    .was-validated .form-control:valid {
+        background-image: none !important;
+        padding-right: 0.75rem !important;
+        border: 1px solid #cfd5dd;
+    }
+
+    .system-title span {
+        color: #9aaeda;
+    }
+
+    .navbar,
+    .sidebar-header {
+        background-color: var(--primary);
+        border-right: 1px solid #ffffff0c;
+    }
+
+    .spinner-modulo {
+        color:#1C74E8;
+    }
+
+    .indicator .circle,
+    .indicator .circle::before {
+        background-color: red !important;
+        max-height: 15px;
+        max-width: 15px;
+        left: 0;
+    }
+
+    #sidebarNav .nav-link {
+        color: #33394b;
+    }
+
+    .sidebar-body {
+        border-right: none;
+    }
+
+    .sidebar-body.ps {
+        /* background-color: #f1f4f8; */
+    }
+
+    .sidebar-toggler > span {
+        background: #fff !important;
+    }
+
+    .lucide.lucide-menu {
+        color: #fff !important;
+    }
+
+    .nav-link.dropdown-toggle svg {
+        stroke: #fff;
+    }
+
+    #sidebarNav .nav.sub-menu .nav-item:hover {
+        background-color: #5c8fc925;
+    }
+
+    .page-title {
+        color: #33394b;
+    }
+
+    .breadcrumb {
+        background-color: #e7ecf1;
+    }
+
+}
+
+[data-bs-theme=dark] {
+    .form-control.is-valid,
+    .was-validated .form-control:valid {
+        background-image: none !important;
+        padding-right: 0.75rem !important;
+        border: 1px solid #292d368e;
+    }
+}
+
+.spinner-modulo {
+    width: 20px; 
+    height: 20px;
+    position: relative;
+    right: 10px;
+}
+
+.indicator .circle,
+.indicator .circle::before {
+    background-color: rgb(255, 115, 0) !important;
+}
+
+.system-title span {
+    font-size: 12px;
+    color: var(--primary);
+}
+
+.tmaz-logo {
+    margin-top: -3px;
+}
+
+#sidebarNav .nav-item.nav-category::before {
+    margin-left: 1px;
+}
+
+#sidebarNav .nav-link {
+    height: 40px;
+    width: 100%;
+    font-size: 15px;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+#sidebarNav .link-title {
+    font-size: 15px;
+}
+
+#sidebarNav .link-icon,
+#sidebarNav .link-arrow {
+    width: 20px;
+    height: 20px;
+}
+
+#sidebarNav .nav-link::before {
+    display: none;
+}
+
+#sidebarNav .nav.sub-menu {
+    padding: 0;
+}
+
+#sidebarNav .nav.sub-menu .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin-left: 10px;
+    padding-left: 15px;
+    border: none;
+    outline: none;
+    background-color: transparent;
+    border-radius: 3px;
+}
+
+#sidebarNav .nav.sub-menu .nav-item:hover {
+    background-color: #ffffff02;
+}
+
+.page-title {
+    font-size: 30px;
+    margin-bottom: 10px;
+}
+
+.breadcrumb {
+    background-color: #1C1E24;
+    padding: 8px 12px;
+    border-radius: 5px;
+    margin-bottom: 30px;
+}
+
+.btn {
+    padding-block: 6px;
+}
+
+.modal-header > h2 {
+    font-size: 24px;
+}
+
+.modal-dialog {
+    margin: auto;
+    margin-top: 30px;
+}
+
+@media (width <= 860px) {
+    .modal-dialog {
+        width: 93%;
+    }
+}

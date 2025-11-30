@@ -1,0 +1,135 @@
+.grid-container {
+  position: relative;
+}
+
+.grid {
+  height: max-content;
+  overflow-x: scroll;
+  font-size: 14px;
+  user-select: none;
+  margin-bottom: 80px;
+}
+
+.grid th,
+.grid td {
+  text-align: center !important;
+  text-transform: uppercase;
+}
+
+.grid-button {
+    border: none;
+    outline: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+[data-bs-theme=light] {
+
+  table {
+    border-color: #E9ECEF;
+  }
+
+  .grid thead {
+    background-color: #F3F6F8;
+  }
+
+  .grid th:nth-child(n+1):not(:last-child) {
+    /* border-right: 1px solid #E9ECEF; */
+  }
+
+  .grid td {
+    background-color: #fff;
+    /* border-bottom: 1px solid #F2F5F7; */
+  }
+
+  .grid-button {
+    background-color: #f3f6fa;
+  }
+}
+
+[data-bs-theme=dark] {
+
+  table {
+    border-color: #c1daf30a;
+  }
+
+  .search input {
+    border: 1px solid #c1daf313 !important;
+    background-color: transparent;
+  }
+
+  .grid thead {
+    background-color: #1C1E24;
+  }
+
+  .grid th:nth-child(n+1):not(:last-child) {
+    /* border-right: 1px solid #d5dae10c; */
+  }
+
+  .grid td {
+    /* border-bottom: 1px solid #d5dae10c; */
+  }
+
+  .grid-button {
+    background-color: #1C1E24;
+  }
+}
+
+.grid-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.btn-p:first-of-type {
+  transform: rotate(.5turn);
+}
+
+.btn-p {
+  width: 30px;
+  height: 25px;
+  border: none;
+  outline: none;
+  border-radius: 3px;
+  background-color: var(--primary);
+  background-image: url(../../src/imgs/np.png);
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.btn-p:hover {
+  background-color: color-mix(in srgb, var(--primary) 90%, white 10%);
+}
+
+.btn-p:disabled {
+  background-color: #4d5c8354;
+}
+
+.btn-clear {
+  display: none;
+  background: none;
+  background-image: url(../../src/imgs/close.png);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}

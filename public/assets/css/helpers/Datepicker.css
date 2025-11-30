@@ -1,0 +1,258 @@
+:root {
+    --datepicker-pcolor: #508EEB;
+}
+
+.datepicker {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.datepicker-input {
+    position: relative;
+}
+
+.datepicker-disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.datepicker-disabled input {
+    cursor: not-allowed;
+    background-color: #f5f5f5;
+}
+
+.datepicker-input input {
+    position: relative;
+    width: 100%;
+    border: 1px solid #ccc;
+    padding: 7px 39px 7px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    max-height: 35px;
+    outline: none;
+}
+
+.datepicker-input input:focus {
+    border: 1px solid var(--focus-color);
+}
+
+.datepicker-input > i {
+    position: absolute;
+    top: 5px;
+    right: 12px;
+    color: #505050;
+}
+
+.datepicker-input > i:hover {
+    cursor: pointer;
+}
+
+.datepicker.datepicker-years-view .current-date:hover {
+    background-color: initial;
+    cursor: default;
+    color: initial;
+}
+
+.datepicker-container {
+    position: absolute;
+    top: 45px;
+    z-index: 2;
+    width: 260px;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid #CDD0D5;
+    user-select: none;
+    display: none;
+}
+
+.datepicker.open .datepicker-container {
+    display: block;
+}
+
+.datepicker-container > div:first-of-type {
+    display: flex;
+    align-items: center;
+    padding: 18px 18px 0;
+    justify-content: space-between;
+}
+
+.datepicker .days li.disabled {
+    color: #ddd;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.datepicker .days li.inactive:not(.disabled) {
+    cursor: pointer;
+}
+
+.datepicker .month-grid,
+.datepicker .year-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    place-items: center;
+    gap: 0.5rem;
+    padding: 1rem 0;
+    list-style: none;
+}
+
+.datepicker .month-grid li,
+.datepicker .year-grid li {
+    text-align: center;
+    padding: 0.5rem;
+    cursor: pointer;
+}
+
+.datepicker .month-grid li:hover,
+.datepicker .year-grid li:hover {
+    background-color: #ffffff22;
+}
+
+.datepicker .disabled {
+    color: #777;
+    pointer-events: none;
+    opacity: 0.4;
+}
+
+
+.icons span.disabled {
+    opacity: 0.3;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.icons {
+    display: flex;
+    position: relative;
+    right: 8px;
+}
+
+.icons > span {
+    width: 20px;
+    height: 20px;
+    background-image: url(../../src/imgs/np.png);
+    background-size: 6px;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.icons > span:first-of-type {
+    transform: rotate(.5turn);
+    margin-top: 1px;
+}
+
+.icons span {
+    height: 20px;
+    width: 20px;
+    margin: 0 1px;
+    cursor: pointer;
+    color: #878787;
+    text-align: center;
+    line-height: 38px;
+    font-size: 12px;
+    user-select: none;
+    border-radius: 5px;
+}
+
+.icons span:last-child {
+    margin-right: -10px;
+}
+
+.icons span:hover {
+    background-color: #f2f2f2;
+}
+
+.current-date {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.current-date:hover {
+    color: var(--datepicker-pcolor);
+}
+
+.calendar {
+    padding: 12px;
+}
+
+.calendar ul {
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    text-align: center;
+    padding-left: 0;
+}
+
+.calendar li {
+    color: #333;
+    width: calc(100% / 7);
+    font-size: 11px;
+}
+
+.calendar .weeks {
+    margin: 0;
+}
+
+.calendar .weeks li {
+    font-weight: 500;
+    cursor: default;
+    margin: 8px 0px;
+    justify-content: center;
+}
+
+.calendar .days {
+    margin-bottom: 5px;
+}
+
+.calendar .days li {
+    z-index: 1;
+    cursor: pointer;
+    position: relative;
+    padding: 4px 0px;
+    margin: 4px 0px;
+    justify-content: center;
+}
+
+.days li.inactive {
+    color: #aaa;
+}
+
+.days li.active {
+    color: #fff;
+}
+
+.days li::before {
+    position: absolute;
+    content: "";
+    left: 50%;
+    top: 50%;
+    height: 23px;
+    width: 23px;
+    z-index: -1;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.datepicker .month-grid li::before,
+.datepicker .year-grid li::before {
+    border-radius: 50%;
+    height: 35px;
+    width: 35px;
+}
+
+.days li.today::before {
+    border: 1px solid var(--datepicker-pcolor);
+    background: transparent;
+}
+
+.days li.active::before {
+    background: var(--datepicker-pcolor);
+}
+
+.days li:not(.active):hover::before {
+    background: #e8eaee;
+}

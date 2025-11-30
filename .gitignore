@@ -1,0 +1,115 @@
+
+
+# ---------- Archivos de Sistema Operativo y de Editor ---------- #
+
+
+# Archivos de sistema de macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Archivos de sistema de Windows
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+
+# Archivos de configuración de editores de código
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+
+# ---------- Archivos y Directorios de PHP y Composer ---------- #
+
+
+# El directorio de dependencias de Composer.
+# Estas deben ser instaladas con `composer install` en cada entorno.
+**/vendor/
+
+# Archivos de bloqueo de Composer.
+composer.lock
+
+# Archivos generados por herramientas de PHP
+composer.phar
+php-cs-fixer.phar
+phpcs.phar
+phpcbf.phar
+
+
+# ---------- Archivos de Configuración y Entorno ---------- #
+
+
+# ¡MUY IMPORTANTE! Nunca subir las variables de entorno al repositorio.
+# Contienen contraseñas, claves de API y otros secretos que normalmente
+# no queremos que cualquier wey sepa.
+.env
+.env.*
+!.env.example
+
+
+# ---------- Archivos de Testing y Cobertura ---------- #
+
+
+# Caché de PHPUnit
+.phpunit.cache/
+phpunit.result.cache
+
+# Reportes de cobertura de código
+coverage/
+clover.xml
+coverage.xml
+
+
+# ---------- Archivos de Log y Temporales ---------- #
+
+
+# Logs de la aplicación y del servidor
+logs/
+*.log
+error_log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos de caché de la aplicación o framework
+/storage/cache/
+/storage/logs/
+/storage/framework/
+
+
+# ---------- Archivos de Frontend (si aplica) ---------- #
+
+
+# Directorio de dependencias de Node.js
+**/node_modules/
+
+# Archivos de bloqueo de paquetes de Node.js
+package-lock.json
+yarn.lock
+
+# Archivos de compilación de herramientas como Vite, Webpack, etc.
+**/build/
+**/dist/
+
+
+# ---------- Archivos de Despliegue y de IDE específicos ---------- #
+
+
+# Despliegues de FTP (FileZilla, etc.)
+.ftp-deploy-sync-state.json
+.ftp-sync-log.log
+
+# Archivos de NetBeans
+**/nbproject/
+
+**/noble-ui/
+
+
+# ---------- Archivos de Compresión ---------- #
+
+*.zip
+*.rar
+*.tar.gz

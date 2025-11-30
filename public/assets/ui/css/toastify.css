@@ -1,0 +1,25 @@
+.toastify {
+    box-shadow: none !important;
+}
+
+[data-bs-theme=light] {
+    .toastify {
+        background-color: #F3F6F8 !important;
+    }
+}
+
+[data-bs-theme=dark] {
+    .toastify {
+        background-color: #1C1E24 !important;
+    }
+}
+
+@media (width <= 407px) {
+    .toastify {
+        min-width: 93% !important;
+    }
+
+    .toastify div {
+        font-size: 12px;
+    }
+}
