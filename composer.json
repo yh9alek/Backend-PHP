@@ -16,9 +16,10 @@
     "require": {
         "phpmailer/phpmailer": "^6.9",
         "dompdf/dompdf": "^3.1",
-        "phpoffice/phpspreadsheet": "^4.1",
+        "phpoffice/phpspreadsheet": "^5.3",
         "firebase/php-jwt": "^6.11",
         "vlucas/phpdotenv": "^5.6",
-        "fakerphp/faker": "^1.24"
+        "fakerphp/faker": "^1.24",
+        "guzzlehttp/guzzle": "^7.8"
     }
 }

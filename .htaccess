@@ -1,0 +1,78 @@
+# ============================================================
+# Manejo de Errores
+# ============================================================
+
+# Ocultar errores de PHP
+php_flag display_errors Off
+php_flag display_startup_errors Off
+php_value error_reporting 0
+
+# Habilitar logs (pero no en pantalla)
+php_flag log_errors On
+php_value error_log ../app/logs/php_errors.log
+
+# ============================================================
+# Seguridad
+# ============================================================
+
+# Ocultar versión de PHP
+php_flag expose_php Off
+
+# Proteger archivos sensibles
+<FilesMatch "^\.env|^\.env\.example|^\.gitignore|^\.htaccess|^composer\.json|^composer\.lock|^seed\.php">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Proteger directorios
+RedirectMatch 404 /\.git
+RedirectMatch 404 /app
+RedirectMatch 404 /vendor
+
+# ============================================================
+# Rewrite Rules
+# ============================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Forzar HTTPS en producción (comentar en desarrollo)
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    
+    # Redirigir todo a index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# ============================================================
+# Headers de Seguridad
+# ============================================================
+
+<IfModule mod_headers.c>
+    # Prevenir ataques XSS
+    Header set X-XSS-Protection "1; mode=block"
+    
+    # Prevenir clickjacking
+    Header set X-Frame-Options "SAMEORIGIN"
+    
+    # Prevenir MIME sniffing
+    Header set X-Content-Type-Options "nosniff"
+    
+    # Política de referrer
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # Content Security Policy (ajustar según necesidades)
+    # Header set Content-Security-Policy "default-src 'self'"
+</IfModule>
+
+# ============================================================
+# Límites de Upload
+# ============================================================
+
+php_value upload_max_filesize 20M
+php_value post_max_size 20M
+php_value max_execution_time 30
+php_value max_input_time 30
+php_value memory_limit 256M

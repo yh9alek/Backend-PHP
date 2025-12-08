@@ -4,7 +4,7 @@ namespace app\Models;
 
 use app\Core\ModelQueryBuilder;
 use app\Core\QueryBuilder;
-
+use app\Helpers\Uuid;
 use Closure;
 
 abstract class BaseModel
@@ -12,6 +12,8 @@ abstract class BaseModel
     // Propiedades que cada modelo hijo debe definir
     protected static string $table;
     protected static string $primaryKey = 'id';
+    protected static bool $useUuid = true; // Habilitar UUIDs por defecto
+    public ?string $uuid = null;
 
     protected array $fillable = [];
 
@@ -19,42 +21,69 @@ abstract class BaseModel
     protected static ?QueryBuilder $queryBuilder = null;
 
     /**
-     * Inicia una consulta para filtrar por la existencia de una relación.
-     *
-     * @param string  $relationName El nombre del método que define la relación.
-     * @param Closure $callback     Una función que recibe un ModelQueryBuilder para añadir condiciones a la subconsulta.
-     * @return ModelQueryBuilder
+     *  Encuentra un registro por UUID
      */
-    public static function whereHas(string $relationName, Closure $callback): ModelQueryBuilder
+    public static function findByUuid(string $uuid): ?static
     {
-        // Llama al método query() para obtener un nuevo builder y le aplica la condición whereHas.
-        return static::query()->whereHas($relationName, $callback);
+        if (!Uuid::isValid($uuid)) {
+            return null;
+        }
+
+        $response = static::db()->select(
+            table: static::$table,
+            where: 'uuid = :uuid',
+            params: ['uuid' => $uuid],
+            extras: 'LIMIT 1'
+        );
+
+        if ($response->success && !empty($response->data)) {
+            $model = new static();
+            $model->hydrate($response->data[0]);
+            return $model;
+        }
+        return null;
     }
 
     /**
-     * Inicia una nueva consulta para el modelo.
-     * Este es el nuevo punto de entrada para el Eager Loading.
-     *
-     * @param array $relations
-     * @return ModelQueryBuilder
+     *  Inicia una query filtrando por UUID
      */
-    public static function with(array $relations): ModelQueryBuilder
+    public static function whereUuid(string $uuid): ModelQueryBuilder
     {
-        return (new ModelQueryBuilder(new static()))->with($relations);
+        return static::query()->where('uuid', '=', $uuid);
     }
 
     /**
-     * Encuentra un registro por su PK.
-     *
-     * @param int|string $id
-     * @return static|null
+     *  Elimina un registro por UUID
      */
-    public static function find(int|string $id): ?static
+    public static function deleteByUuid(string $uuid): bool
     {
+        if (!Uuid::isValid($uuid)) {
+            return false;
+        }
+
+        $response = static::db()->delete(
+            static::$table, 
+            'uuid = :uuid', 
+            ['uuid' => $uuid]
+        );
+        return $response->success;
+    }
+
+    /**
+     * Encuentra un registro por su PK o UUID
+     */
+    public static function find(int|string $identifier): ?static
+    {
+        // Si es UUID, usar findByUuid()
+        if (is_string($identifier) && Uuid::isValid($identifier)) {
+            return static::findByUuid($identifier);
+        }
+
+        // Si es ID numérico, usar búsqueda tradicional
         $response = static::db()->select(
             table: static::$table,
             where: static::$primaryKey . ' = :id',
-            params: ['id' => $id],
+            params: ['id' => $identifier],
             extras: 'LIMIT 1'
         );
 
@@ -68,7 +97,6 @@ abstract class BaseModel
 
     /**
      * Obtiene todos los registros de la tabla.
-     * Devuelve un array de instancias del modelo.
      */
     public static function all(): array
     {
@@ -93,17 +121,20 @@ abstract class BaseModel
     }
 
     /**
-     * Guarda el registro actual en la BBDD.
-     * Decide si debe ser un INSERT (si no tiene ID) o un UPDATE (si tiene ID).
+     *  Genera UUID automáticamente al guardar cambios
      */
     public function save(): bool
     {
         $attributes = $this->getAttributes();
-
         $primaryKeyProperty = $this->toCamelCase(static::$primaryKey);
 
-        if (isset($this->$primaryKeyProperty)) {
+        // AUTO-GENERAR UUID si no existe
+        if (static::$useUuid && empty($this->uuid)) {
+            $this->uuid = Uuid::generate();
+            $attributes['uuid'] = $this->uuid;
+        }
 
+        if (isset($this->$primaryKeyProperty)) {
             // --- Lógica de UPDATE ---
             $id = $this->$primaryKeyProperty;
             unset($attributes[static::$primaryKey]);
@@ -118,7 +149,6 @@ abstract class BaseModel
             // --- Lógica de INSERT ---
             $response = self::db()->insert(static::$table, $attributes);
             if ($response->success) {
-                // Asignamos el nuevo ID a la propiedad camelCase correcta.
                 $this->$primaryKeyProperty = (int)$response->data;
             }
         }
@@ -131,37 +161,45 @@ abstract class BaseModel
      */
     public static function delete(int|string $id): bool
     {
-        $response = static::db()->delete(static::$table, static::$primaryKey . ' = :id', ['id' => $id]);
+        $response = static::db()->delete(
+            static::$table, 
+            static::$primaryKey . ' = :id', 
+            ['id' => $id]
+        );
         return $response->success;
     }
 
     # --- LÓGICA DE RELACIONES (EAGER LOADING) --- #
 
     /**
+     * Inicia una nueva consulta para el modelo con Eager Loading.
+     */
+    public static function with(array $relations): ModelQueryBuilder
+    {
+        return (new ModelQueryBuilder(new static()))->with($relations);
+    }
+
+    /**
+     * Inicia una consulta para filtrar por la existencia de una relación.
+     */
+    public static function whereHas(string $relationName, Closure $callback): ModelQueryBuilder
+    {
+        return static::query()->whereHas($relationName, $callback);
+    }
+
+    /**
      * Carga las relaciones especificadas para este objeto de modelo.
-     *
-     * @param array|string $relations
-     * @return $this
      */
     public function load($relations): self
     {
         $relations = is_array($relations) ? $relations : [$relations];
-
-        // 1. Creamos una variable que contenga el array.
         $collection = [$this];
-
-        // 2. Pasamos la variable por referencia.
         $this->loadRelationsForCollection($collection, $relations);
-
         return $this;
     }
 
     /**
      * Carga las relaciones para una colección de modelos.
-     * Este es el método más importante para evitar el problema N+1.
-     *
-     * @param array $collection La colección de modelos.
-     * @param array $relations  Las relaciones a cargar.
      */
     public function loadRelationsForCollection(array &$collection, array $relations)
     {
@@ -169,9 +207,7 @@ abstract class BaseModel
             return;
         }
 
-        // Agrupar relaciones por nivel para procesarlas (ej. 'perfil', 'perfil.permisos')
         $groupedRelations = $this->parseRelations($relations);
-
         $this->loadGroupedRelations($collection, $groupedRelations);
     }
 
@@ -180,26 +216,20 @@ abstract class BaseModel
         if (empty($collection)) return;
 
         foreach ($groupedRelations as $relationName => $nested) {
-            // Obtiene la definición de la relación del modelo.
             $relationDetails = $this->$relationName();
             $relatedModelClass = $relationDetails['model'];
             $relatedCollection = [];
 
-            // --- LÓGICA PARA CADA TIPO DE RELACIÓN ---
-
             if ($relationDetails['type'] === 'belongsTo') {
                 $foreignKey = $relationDetails['foreignKey'];
                 $ownerKey = $relationDetails['ownerKey'];
-
                 $foreignKeyProperty = $this->toCamelCase($foreignKey);
                 $foreignKeys = array_unique(array_filter(array_map(fn($model) => $model->$foreignKeyProperty, $collection)));
 
                 if (!empty($foreignKeys)) {
-                    // 2. Ejecuta UNA SOLA consulta para traer todos los modelos relacionados.
                     $relatedCollection = $relatedModelClass::whereIn($ownerKey, $foreignKeys)->get();
                 }
 
-                // 3. Mapea los modelos relacionados de vuelta a sus "padres".
                 $relatedMap = [];
                 foreach ($relatedCollection as $related) {
                     $relatedMap[$related->$ownerKey] = $related;
@@ -209,24 +239,16 @@ abstract class BaseModel
                 }
             }
 
-            # --- hasMany --- #
             if ($relationDetails['type'] === 'hasMany') {
                 $foreignKey = $relationDetails['foreignKey'];
                 $localKey = $relationDetails['localKey'];
-
                 $localKeyProperty = $this->toCamelCase($localKey);
-
-                // 1. Recolecta las claves locales usando la propiedad camelCase correcta.
                 $localKeys = array_unique(array_map(fn($model) => $model->$localKeyProperty, $collection));
 
                 if (!empty($localKeys)) {
-                    // 2. Ejecuta UNA SOLA consulta para traer todos los modelos relacionados
-                    //    que coincidan con cualquiera de las claves locales.
                     $relatedCollection = $relatedModelClass::whereIn($foreignKey, $localKeys)->get();
                 }
 
-                // 3. Mapea los modelos relacionados de vuelta a sus "padres".
-                //    Como es una relación "muchos", agrupamos los hijos por la clave foránea.
                 $relatedMap = [];
                 foreach ($relatedCollection as $related) {
                     $relatedMap[$related->$foreignKey][] = $related;
@@ -237,23 +259,17 @@ abstract class BaseModel
                 }
             }
 
-            # -- belongsToMany -- #
             if ($relationDetails['type'] === 'belongsToMany') {
                 $relatedModelClass = $relationDetails['model'];
                 $pivotTable = $relationDetails['pivotTable'];
-                $foreignPivotKey = $relationDetails['foreignPivotKey']; // Clave en la pivote que apunta al modelo actual
-                $relatedPivotKey = $relationDetails['relatedPivotKey']; // Clave en la pivote que apunta al modelo relacionado
-                $localKey = $relationDetails['localKey']; // PK del modelo actual
-                $relatedKey = $relationDetails['relatedKey']; // PK del modelo relacionado
-
+                $foreignPivotKey = $relationDetails['foreignPivotKey'];
+                $relatedPivotKey = $relationDetails['relatedPivotKey'];
+                $localKey = $relationDetails['localKey'];
+                $relatedKey = $relationDetails['relatedKey'];
                 $localKeyProperty = $this->toCamelCase($localKey);
-
-                // 1. Recolecta las claves locales usando la propiedad camelCase correcta.
                 $localKeys = array_unique(array_map(fn($model) => $model->$localKeyProperty, $collection));
 
                 if (!empty($localKeys)) {
-                    // 2. Ejecuta UNA SOLA consulta para traer todos los modelos relacionados,
-                    //    uniendo la tabla pivote para saber a quién pertenecen.
                     $placeholders = implode(',', array_fill(0, count($localKeys), '?'));
                     $sql = "SELECT {$relatedModelClass::$table}.*, {$pivotTable}.{$foreignPivotKey} AS pivot_{$foreignPivotKey}
                     FROM {$relatedModelClass::$table}
@@ -264,17 +280,14 @@ abstract class BaseModel
                     $stmt->execute($localKeys);
                     $relatedItemsRaw = $stmt->fetchAll(\PDO::FETCH_OBJ);
 
-                    // 3. Mapea los modelos relacionados de vuelta a sus "padres".
                     $relatedMap = [];
                     foreach ($relatedItemsRaw as $item) {
                         $relatedModel = new $relatedModelClass();
                         $relatedModel->hydrate($item);
-                        // Usamos la columna 'pivot_...' para saber a qué padre pertenece
                         $relatedMap[$item->{"pivot_{$foreignPivotKey}"}][] = $relatedModel;
                     }
 
                     foreach ($collection as $model) {
-                        // Usamos la propiedad en camelCase ($localKeyProperty) para buscar en el mapa.
                         $model->$relationName = $relatedMap[$model->$localKeyProperty] ?? [];
                     }
                 } else {
@@ -284,24 +297,17 @@ abstract class BaseModel
                 }
             }
 
-            // --- RECURSIÓN PARA RELACIONES ANIDADAS ---
             if (!empty($nested)) {
-                // 1. Aplanamos la colección de sub-modelos.
                 $subCollection = [];
                 foreach ($collection as $model) {
                     if (isset($model->$relationName) && $model->$relationName !== null) {
-                        // Si la relación es un array (hasMany/belongsToMany), lo fusionamos.
-                        // Si es un objeto (belongsTo), lo añadimos al array.
                         $subCollection = array_merge($subCollection, is_array($model->$relationName) ? $model->$relationName : [$model->$relationName]);
                     }
                 }
 
-                // 2. Quitamos duplicados si los hubiera.
                 $subCollection = array_unique($subCollection, SORT_REGULAR);
 
                 if (!empty($subCollection)) {
-                    // 3. Creamos una instancia del modelo relacionado para llamar al método.
-                    //    Pasamos las claves del siguiente nivel de anidación (ej. 'permisos' de ['perfil' => ['permisos' => []]])
                     (new $relatedModelClass())->loadRelationsForCollection($subCollection, array_keys($nested));
                 }
             }
@@ -312,25 +318,14 @@ abstract class BaseModel
 
     /**
      * Inicia una nueva consulta con una condición WHERE.
-     *
-     * @param string $column
-     * @param string $operator
-     * @param mixed $value
-     * @return ModelQueryBuilder
      */
     public static function where(string $column, string $operator, $value): ModelQueryBuilder
     {
-        // 1. Crea una nueva instancia del Query Builder.
-        // 2. Llama al método 'where' del builder y devuelve el builder.
         return (new ModelQueryBuilder(new static()))->where($column, $operator, $value);
     }
 
     /**
      * Inicia una nueva consulta con una condición ORDER BY.
-     *
-     * @param string $column
-     * @param string $direction
-     * @return ModelQueryBuilder
      */
     public static function orderBy(string $column, string $direction = 'ASC'): ModelQueryBuilder
     {
@@ -363,9 +358,6 @@ abstract class BaseModel
 
     /**
      * Convierte una cadena de snake_case a camelCase.
-     *
-     * @param string $snakeCaseString
-     * @return string
      */
     private function toCamelCase(string $snakeCaseString): string
     {
@@ -385,7 +377,6 @@ abstract class BaseModel
 
     /**
      * Rellena las propiedades públicas del objeto con datos.
-     * @param object|array $data
      */
     public function hydrate(object|array $data): void
     {
@@ -399,19 +390,14 @@ abstract class BaseModel
 
     /**
      * Obtiene un array asociativo con las propiedades públicas del modelo.
-     * Útil para los métodos insert y update.
-     * @return array
      */
     protected function getAttributes(): array
     {
         $attributes = [];
 
-        // Iteramos sobre la lista 'fillable' en lugar de todas las propiedades públicas.
         foreach ($this->fillable as $fillableAttribute) {
-            // Convertimos el nombre de la columna (snake_case) a propiedad (camelCase)
             $property = $this->toCamelCase($fillableAttribute);
 
-            // Comprobamos si la propiedad existe y está inicializada en el objeto
             if (property_exists($this, $property) && isset($this->$property)) {
                 $attributes[$fillableAttribute] = $this->$property;
             }
@@ -422,7 +408,6 @@ abstract class BaseModel
 
     /**
      * Wrapper público para obtener los atributos.
-     * Útil para las fábricas y el bulk insert.
      */
     public function getAttributesForInsert(): array
     {
@@ -430,9 +415,73 @@ abstract class BaseModel
     }
 
     /**
-     * Helper para convertir un array plano de relaciones con notación de punto
-     * en un array anidado.
-     * Ejemplo: ['perfil', 'perfil.permisos'] -> ['perfil' => ['permisos' => []]]
+     * Asignación masiva de atributos (Mass Assignment)
+     * 
+     * @param array $attributes Atributos en snake_case
+     * @return self
+     */
+    public function fill(array $attributes): self
+    {
+        foreach ($attributes as $key => $value) {
+            // Convertir snake_case a camelCase
+            $property = $this->toCamelCase($key);
+            
+            // Solo asignar si la propiedad existe y el atributo está en fillable
+            if (in_array($key, $this->fillable) && property_exists($this, $property)) {
+                $this->$property = $value;
+            }
+        }
+        
+        return $this;
+    }
+
+    /**
+     * Actualiza solo los atributos proporcionados (merge)
+     * Similar a fill() pero respeta valores existentes si no se proporcionan nuevos
+     * 
+     * @param array $attributes Atributos en snake_case
+     * @return self
+     */
+    public function merge(array $attributes): self
+    {
+        foreach ($attributes as $key => $value) {
+            $property = $this->toCamelCase($key);
+            
+            // Solo asignar si:
+            // 1. El atributo está en fillable
+            // 2. La propiedad existe
+            // 3. El valor no es null
+            if (in_array($key, $this->fillable) && 
+                property_exists($this, $property) && 
+                $value) {
+
+                if(intval($value)) {
+                    $value = (int) $value;
+                }
+
+                $this->$property = $value;
+            }
+        }
+        
+        return $this;
+    }
+
+    /**
+     * Crea o actualiza un modelo (upsert simplificado)
+     * 
+     * @param array $attributes Atributos del modelo
+     * @return static
+     */
+    public static function createOrUpdate(array $attributes): static
+    {
+        $model = new static();
+        $model->fill($attributes);
+        $model->save();
+        return $model;
+    }
+
+    /**
+     * Helper para convertir array de relaciones con notación de punto a array anidado.
      */
     private function parseRelations(array $relations): array
     {
@@ -457,8 +506,6 @@ abstract class BaseModel
 
     /**
      * Inicia una consulta fluida para el modelo.
-     *
-     * @return ModelQueryBuilder
      */
     public static function query(): ModelQueryBuilder
     {
@@ -467,8 +514,6 @@ abstract class BaseModel
 
     /**
      * Obtiene el constructor de consultas de bajo nivel (QueryBuilder).
-     *
-     * @return QueryBuilder
      */
     public static function queryBuilder(): QueryBuilder
     {

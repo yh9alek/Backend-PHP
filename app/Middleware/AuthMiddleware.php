@@ -4,48 +4,60 @@ namespace app\Middleware;
 
 use app\Core\Request;
 use app\Core\Response;
-use app\Core\View;
-use app\services\JwtService;
-
+use app\Services\KeycloakService;
 use Closure;
 
-class AuthMiddleware 
+/**
+ * Middleware que valida tokens JWT de Keycloak.
+ * Ya no usa cookies, solo valida el header Authorization.
+ */
+class AuthMiddleware
 {
     public function __construct(
-        private JwtService $jwtService,
-        private View $view
+        private KeycloakService $keycloakService
     ) {}
 
     /**
      * @param Request $request
      * @param Closure $next
-     * @param string|null $guard El "guardia" que se usará ('api' o null para web).
      * @return Response
      */
-    public function handle(Request $request, Closure $next, ?string $guard = null): Response
+    public function handle(Request $request, Closure $next): Response
     {
-        $user = $this->jwtService->validateToken();
-
-        if (!$user) {
-            if ($guard === 'api') {
-
-                // $content = $this->view->render('error', [
-
-                //     'message'   => 'Sin Autorización. Sesión Expirada.',
-                //     'errorCode' => 401
-
-                // ], '_error');
-
-                // return new Response($content);
-
-                return new Response(json_encode(['error' => 'Sin autorización. Sesión Expirada.']), 401, ['Content-Type' => 'application/json']);
-            } else {
-                // Para la web, redirigimos al login.
-                $this->jwtService->logout();
-                return new Response('', 302, ['Location' => '/login']);
-            }
-        }
+        // 1. Extraer el token del header Authorization
+        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
         
+        if (empty($authHeader) || !str_starts_with($authHeader, 'Bearer ')) {
+            return $this->unauthorizedResponse('Token no proporcionado.');
+        }
+
+        $token = substr($authHeader, 7); // Remover "Bearer "
+
+        // 2. Validar el token con Keycloak
+        $decodedToken = $this->keycloakService->validateToken($token);
+
+        if (!$decodedToken) {
+            return $this->unauthorizedResponse('Token inválido o expirado.');
+        }
+
+        // 3. Agregar información del usuario al request para uso posterior
+        $request->setAuthUser($decodedToken);
+
+        // 4. Continuar con la petición
         return $next($request);
+    }
+
+    /**
+     * Respuesta estándar de error 401.
+     */
+    private function unauthorizedResponse(string $message): Response
+    {
+        $content = json_encode([
+            'success' => false,
+            'error' => $message,
+            'code' => 401
+        ]);
+
+        return new Response($content, 401, ['Content-Type' => 'application/json']);
     }
 }

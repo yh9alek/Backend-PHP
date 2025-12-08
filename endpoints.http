@@ -1,0 +1,73 @@
+@host = localhost
+@port = 8000
+@base_url = http://{{host}}:{{port}}
+
+###
+
+# @name iniciarSesion
+POST {{base_url}}/api/auth/login
+Content-Type: application/json
+
+{
+    "username": "admin@test.com",
+    "password": "Test123!"
+}
+
+# ----- RUTAS PROTEGIDAS (AUTENTICACIÓN REQUERIDA) ----- #
+
+###
+
+# @name listarUsuarios
+GET {{base_url}}/api/usuarios
+Authorization: Bearer {{iniciarSesion.response.body.data.access_token}}
+
+###
+
+# @name obtenerUsuario
+GET {{base_url}}/api/usuarios/3fb491d1-c3e3-4757-a5c2-1b24995ef9ec
+Authorization: Bearer {{iniciarSesion.response.body.data.access_token}}
+
+###
+
+# @name crearUsuario
+# @prompt username
+# @prompt email
+# @prompt profile_id
+# @prompt area_id
+# @prompt nombre
+# @prompt apellido_paterno
+POST {{base_url}}/api/usuarios
+Content-Type: application/json
+Authorization: Bearer {{iniciarSesion.response.body.data.access_token}}
+
+{
+    "username": "{{username}}",
+    "email": "{{email}}",
+    "profile_id": "{{profile_id}}",
+    "area_id": "{{area_id}}",
+    "nombre": "{{nombre}}",
+    "apellido_paterno": "{{apellido_paterno}}" 
+}
+
+###
+
+# @name modificarUsuario
+# @prompt username
+# @prompt email
+# @prompt profile_id
+# @prompt area_id
+# @prompt nombre
+# @prompt apellido_paterno
+PUT {{base_url}}/api/usuarios/3fb491d1-c3e3-4757-a5c2-1b24995ef9ec
+Content-Type: application/json
+Authorization: Bearer {{iniciarSesion.response.body.data.access_token}}
+
+{
+    "username": "{{username}}",
+    "email": "{{email}}",
+    "profile_id": "{{profile_id}}",
+    "area_id": "{{area_id}}",
+    "nombre": "{{nombre}}",
+    "apellido_paterno": "{{apellido_paterno}}" 
+}
+
