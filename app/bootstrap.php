@@ -93,7 +93,7 @@ if ($appEnv === 'development' && $appDebug) {
     ini_set('log_errors', '1');
     
     // Crear directorio de logs si no existe
-    $logDir = __DIR__ . '/logs';
+    $logDir = __DIR__ . '/../logs';
     if (!is_dir($logDir)) {
         mkdir($logDir, 0755, true);
     }
@@ -106,7 +106,7 @@ if ($appEnv === 'development' && $appDebug) {
     error_reporting(0);
     ini_set('log_errors', '1');
     
-    $logDir = __DIR__ . '/logs';
+    $logDir = __DIR__ . '/../logs';
     if (!is_dir($logDir)) {
         mkdir($logDir, 0755, true);
     }

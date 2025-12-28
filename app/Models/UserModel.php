@@ -16,7 +16,6 @@ class UserModel extends BaseModel
     public ?string $apellidoMaterno = null;
     public string  $username;
     public string  $email;
-    public string  $pass; // Ya no se usa (Keycloak maneja contraseñas)
     public ?string $telefono = null;
     public int     $createUser;
     public string  $createdAt;

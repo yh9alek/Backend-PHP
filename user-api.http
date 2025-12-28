@@ -9,8 +9,8 @@ POST {{base_url}}/api/auth/login
 Content-Type: application/json
 
 {
-    "username": "admin@test.com",
-    "password": "Test123!"
+    "username": "yohan.plazola",
+    "password": "123"
 }
 
 # ----- RUTAS PROTEGIDAS (AUTENTICACIÓN REQUERIDA) ----- #
@@ -19,55 +19,71 @@ Content-Type: application/json
 
 # @name listarUsuarios
 GET {{base_url}}/api/usuarios
+Origin: http://localhost:9999
 Authorization: Bearer {{iniciarSesion.response.body.data.access_token}}
 
 ###
 
 # @name obtenerUsuario
-GET {{base_url}}/api/usuarios/3fb491d1-c3e3-4757-a5c2-1b24995ef9ec
+GET {{base_url}}/api/usuarios/5363ba50-eb91-4bab-bacf-fea64f2fe0ac
 Authorization: Bearer {{iniciarSesion.response.body.data.access_token}}
+
+
 
 ###
 
 # @name crearUsuario
 # @prompt username
-# @prompt email
 # @prompt profile_id
 # @prompt area_id
 # @prompt nombre
 # @prompt apellido_paterno
+# @prompt apellido_materno
+# @prompt email
+# @prompt telefono
 POST {{base_url}}/api/usuarios
 Content-Type: application/json
 Authorization: Bearer {{iniciarSesion.response.body.data.access_token}}
 
 {
     "username": "{{username}}",
-    "email": "{{email}}",
     "profile_id": "{{profile_id}}",
     "area_id": "{{area_id}}",
     "nombre": "{{nombre}}",
-    "apellido_paterno": "{{apellido_paterno}}" 
+    "apellido_paterno": "{{apellido_paterno}}",
+    "apellido_materno": "{{apellido_materno}}",
+    "email": "{{email}}",
+    "telefono": "{{telefono}}"
 }
 
 ###
 
 # @name modificarUsuario
 # @prompt username
-# @prompt email
 # @prompt profile_id
 # @prompt area_id
 # @prompt nombre
 # @prompt apellido_paterno
+# @prompt apellido_materno
+# @prompt email
+# @prompt telefono
 PUT {{base_url}}/api/usuarios/3fb491d1-c3e3-4757-a5c2-1b24995ef9ec
 Content-Type: application/json
 Authorization: Bearer {{iniciarSesion.response.body.data.access_token}}
 
 {
     "username": "{{username}}",
-    "email": "{{email}}",
     "profile_id": "{{profile_id}}",
     "area_id": "{{area_id}}",
     "nombre": "{{nombre}}",
-    "apellido_paterno": "{{apellido_paterno}}" 
+    "apellido_paterno": "{{apellido_paterno}}",
+    "apellido_materno": "{{apellido_materno}}",
+    "email": "{{email}}",
+    "telefono": "{{telefono}}"
 }
 
+###
+
+# @name eliminarUsuario
+DELETE {{base_url}}/api/usuarios/5b633113-c258-4776-b7aa-40819f30f6a5
+Authorization: Bearer {{iniciarSesion.response.body.data.access_token}}

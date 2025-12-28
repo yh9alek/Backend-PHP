@@ -81,9 +81,9 @@ class Router
         $method = $request->method();
         $uri = $request->uri();
 
-        // Manejar CORS preflight (OPTIONS)
+        // ✅ Manejar CORS preflight (OPTIONS)
         if ($method === 'OPTIONS') {
-            return $this->handleCorsPreflightGlobal();
+            return $this->addCorsHeaders($this->handleCorsPreflight());
         }
 
         foreach ($this->routes as $route) {
@@ -97,14 +97,16 @@ class Router
                     return is_string($key);
                 }, ARRAY_FILTER_USE_KEY);
 
-                // ⭐ IMPORTANTE: Usar setRouteParams() en lugar de $_REQUEST
                 $request->setRouteParams($params);
 
-                return $this->executeRoute($route, $request);
+                // ✅ Agregar headers CORS a la respuesta
+                $response = $this->executeRoute($route, $request);
+                return $this->addCorsHeaders($response);
             }
         }
 
-        return $this->notFoundResponse();
+        // ✅ Agregar headers CORS también al 404
+        return $this->addCorsHeaders($this->notFoundResponse());
     }
 
     private function executeRoute(array $route, Request $request): Response
@@ -143,6 +145,7 @@ class Router
     {
         $middlewareMap = [
             'auth' => \app\Middleware\AuthMiddleware::class,
+            'role' => \app\Middleware\RequireClientRoleMiddleware::class,
         ];
 
         return $middlewareMap[$alias] ?? $alias;
@@ -166,46 +169,93 @@ class Router
     private function notFoundResponse(): Response
     {
         return new Response(
-            json_encode([
+            content: json_encode([
                 'success' => false,
                 'error' => 'Endpoint no encontrado',
                 'code' => 404
             ]),
-            404,
-            ['Content-Type' => 'application/json']
+            statusCode: 404,
+            headers: ['Content-Type' => 'application/json']
         );
     }
 
-    private function handleCorsPreflightGlobal(): Response
+    private function handleCorsPreflight(): Response
     {
-        return new Response('', 204, [
-            'Access-Control-Allow-Origin' => $this->getAllowedOrigin(),
-            'Access-Control-Allow-Methods' => 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With',
-            'Access-Control-Allow-Credentials' => 'true',
-            'Access-Control-Max-Age' => '86400'
-        ]);
+        return new Response(content: '', statusCode: 204);
     }
 
+    /**
+     * Retorna una nueva instancia de Response con headers CORS
+     */
+    private function addCorsHeaders(Response $response): Response
+    {
+        $corsHeaders = [
+            'Access-Control-Allow-Origin'      => $this->getAllowedOrigin(),
+            'Access-Control-Allow-Methods'     => 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+            'Access-Control-Allow-Headers'     => 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Allow-Credentials' => 'true', // ✅ CRÍTICO para cookies
+            'Access-Control-Max-Age'           => '86400',
+        ];
+
+        // ✅ Usa withHeaders() que retorna una nueva instancia
+        return $response->withHeaders($corsHeaders);
+    }
+
+    /**
+     * Obtiene el origen permitido para CORS
+     * 
+     * ✅ ACTUALIZADO: Leer desde .env y agregar todos los puertos comunes
+     */
     private function getAllowedOrigin(): string
     {
-        $allowedOrigins = [
-            'http://localhost:5173',
-            'http://localhost:3000',
-            'http://localhost:8080',
-            'https://tudominio.com'
-        ];
+        // Intentar leer desde .env
+        $envOrigins = $_ENV['CORS_ALLOWED_ORIGINS'] ?? '';
+        
+        $allowedOrigins = [];
+        
+        if (!empty($envOrigins)) {
+            // Si existe en .env, parsear la lista
+            $allowedOrigins = array_map('trim', explode(',', $envOrigins));
+        } else {
+            // Valores por defecto para desarrollo
+            $allowedOrigins = [
+                // Localhost con diferentes puertos
+                'https://siabi.tmaz.mx',     // Vite (puerto por defecto)
+                'http://localhost:3000',     // React/Next.js
+                'http://localhost:4200',     // Angular
+                'http://localhost:8080',     // Vue CLI / Keycloak
+                
+                // 127.0.0.1 (equivalente a localhost)
+                // 'http://127.0.0.1:5173',
+                'http://127.0.0.1:3000',
+                'http://127.0.0.1:4200',
+                'http://127.0.0.1:8080',
+                
+                // Producción (agregar los dominios)
+                // 'https://siabi.tudominio.com',
+                // 'https://siga.tudominio.com',
+                // 'https://sigep.tudominio.com',
+                // 'https://sian.tudominio.com',
+            ];
+        }
 
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
-        if (in_array($origin, $allowedOrigins)) {
+        // Si el origin está en la lista permitida, retornarlo
+        if (in_array($origin, $allowedOrigins, true)) {
             return $origin;
         }
 
+        // En desarrollo, permitir cualquier origin local
         if (($_ENV['APP_ENV'] ?? 'production') === 'development') {
-            return '*';
+            // Permitir cualquier localhost o 127.0.0.1
+            if (preg_match('#^https?://(localhost|127\.0\.0\.1):\d+$#', $origin)) {
+                return $origin;
+            }
+            return $origin ?: '*';
         }
 
+        // En producción, no permitir nada que no esté en la lista
         return '';
     }
 

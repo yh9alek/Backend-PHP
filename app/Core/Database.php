@@ -29,7 +29,7 @@ class Database {
                     PDO\Mysql::ATTR_INIT_COMMAND => "SET NAMES utf8mb4"
                 ]);
             } catch (\PDOException $e) {
-                file_put_contents(__DIR__.'/../logs/db.txt', "[ ". date('d/m/Y H:i:s A')." ] {$e->getMessage()} \n\n", FILE_APPEND);
+                file_put_contents(__DIR__.'/../../logs/db.log', "[ ". date('d/m/Y H:i:s A')." ] {$e->getMessage()} \n\n", FILE_APPEND);
                 throw new PDOException('Error de conexión a la base de datos');
             }
         }

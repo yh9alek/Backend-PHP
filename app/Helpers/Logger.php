@@ -16,7 +16,7 @@ class Logger
     private static function init(): void
     {
         if (self::$logDir === null) {
-            self::$logDir = __DIR__ . '/../logs';
+            self::$logDir = __DIR__ . '/../../logs';
             
             if (!is_dir(self::$logDir)) {
                 mkdir(self::$logDir, 0755, true);
@@ -29,7 +29,7 @@ class Logger
      */
     public static function error(string $message, array $context = []): void
     {
-        self::log('ERROR', $message, $context, 'errors.log');
+        self::log('ERROR', $message, $context, 'responses.log');
     }
 
     /**

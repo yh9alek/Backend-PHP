@@ -27,7 +27,7 @@ class AuthService
         if (empty($username) || empty($password)) {
             return (object)[
                 'success' => false,
-                'error'   => 'El usuario y la contraseña son requeridos.',
+                'message' => 'El usuario y la contraseña son requeridos.',
                 'code'    => 400
             ];
         }
@@ -45,8 +45,16 @@ class AuthService
         if (!$decodedToken) {
             return (object)[
                 'success' => false,
-                'error'   => 'Token inválido recibido de Keycloak.',
-                'code'    => 500
+                'message' => 'Token inválido recibido de Keycloak.',
+                'code'    => 401
+            ];
+        }
+
+        if($decodedToken->message) {
+            return (object)[
+                'success' => false,
+                'message' => $decodedToken->message,
+                'code'    => 401
             ];
         }
 
@@ -63,7 +71,7 @@ class AuthService
             'expires_in'    => $keycloakResult->expires_in,
             'user'          => $localUser,
             'roles'         => $roles,
-            'keycloak_id'   => $decodedToken->sub
+            // 'keycloak_id'   => $decodedToken->sub
         ];
     }
 
@@ -104,7 +112,6 @@ class AuthService
             $user->keycloakId = $keycloakId;
             $user->profileId = 1; // Perfil por defecto
             $user->areaId = 1;    // Área por defecto
-            $user->pass = ''; // No se almacena contraseña (Keycloak la maneja)
             $user->createUser = 1; // Sistema
             $user->createdAt = date('Y-m-d H:i:s');
             

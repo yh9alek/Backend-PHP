@@ -84,7 +84,6 @@ abstract class BaseController
         $response = [
             'success' => false,
             'error' => $message,
-            'code' => $statusCode
         ];
 
         if (!empty($details)) {

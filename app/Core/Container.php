@@ -7,24 +7,35 @@ namespace app\Core;
  */
 class Container {
     private array $bindings = [];
+    private array $instances = []; // Cache de singletons
 
-    public function set(string $key, callable $resolver): void {
-        $this->bindings[$key] = $resolver;
+    public function singleton(string $key, callable $resolver): void {
+        $this->bindings[$key] = ['resolver' => $resolver, 'singleton' => true];
     }
 
-    public function get(string $key) {
+    public function set(string $key, callable $resolver): void {
+        $this->bindings[$key] = ['resolver' => $resolver, 'singleton' => false];
+    }
 
-        // // --- DEPURACIÓN ---
-        // echo "Intentando obtener: {$key}<br>";
-        // echo "Bindings disponibles: <pre>";
-        // print_r(array_keys($this->bindings));
-        // echo "</pre>";
-        // // ------------------
-
+    public function get(string $key): mixed {
         if (!isset($this->bindings[$key])) {
             throw new \Exception("No binding found for {$key}");
         }
-        $resolver = $this->bindings[$key];
-        return $resolver($this);
+
+        $binding = $this->bindings[$key];
+
+        // Si es singleton y ya existe, retornar instancia cacheada
+        if ($binding['singleton'] && isset($this->instances[$key])) {
+            return $this->instances[$key];
+        }
+
+        $instance = $binding['resolver']($this);
+
+        // Cachear si es singleton
+        if ($binding['singleton']) {
+            $this->instances[$key] = $instance;
+        }
+
+        return $instance;
     }
 }

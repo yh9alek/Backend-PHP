@@ -10,6 +10,7 @@ class Request
     private array $postParams = [];
     private array $routeParams = [];
     private array $files = [];
+    private array $cookies = [];
     private string $method;
     private string $uri;
     
@@ -20,6 +21,7 @@ class Request
         $this->method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
         $this->uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
         $this->queryParams = $_GET;
+        $this->cookies = $_COOKIE;
         
         // Manejar JSON en el body para APIs
         $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
@@ -88,6 +90,39 @@ class Request
     }
 
     /**
+     * Obtiene una cookie por su nombre
+     * 
+     * @param string $key Nombre de la cookie
+     * @param mixed $default Valor por defecto si no existe
+     * @return mixed
+     */
+    public function cookie(string $key, $default = null)
+    {
+        return $this->cookies[$key] ?? $default;
+    }
+
+    /**
+     * Verifica si existe una cookie
+     * 
+     * @param string $key Nombre de la cookie
+     * @return bool
+     */
+    public function hasCookie(string $key): bool
+    {
+        return isset($this->cookies[$key]);
+    }
+
+    /**
+     * Obtiene todas las cookies
+     * 
+     * @return array
+     */
+    public function allCookies(): array
+    {
+        return $this->cookies;
+    }
+
+    /**
      * Obtiene TODOS los parámetros de todas las fuentes combinados
      */
     public function allParams(): array
@@ -127,6 +162,15 @@ class Request
 
     // --- MÉTODOS DE AUTENTICACIÓN ---
 
+    /**
+     * Alias de user() para compatibilidad con middlewares.
+     * Ambos métodos retornan el mismo objeto de usuario autenticado.
+     */
+    public function getAuthUser(): ?stdClass
+    {
+        return $this->authUser;
+    }
+
     public function setAuthUser(stdClass $user): void
     {
         $this->authUser = $user;
@@ -155,5 +199,47 @@ class Request
     public function username(): ?string
     {
         return $this->authUser?->preferred_username ?? null;
+    }
+
+    /**
+     * Obtiene un parámetro sanitizado como string
+     */
+    public function string(string $key, string $default = ''): string
+    {
+        $value = $this->param($key, $default);
+        return htmlspecialchars(trim((string) $value), ENT_QUOTES, 'UTF-8');
+    }
+
+    /**
+     * Obtiene un parámetro como entero
+     */
+    public function integer(string $key, int $default = 0): int
+    {
+        return (int) $this->param($key, $default);
+    }
+
+    /**
+     * Obtiene un parámetro como booleano
+     */
+    public function boolean(string $key, bool $default = false): bool
+    {
+        $value = $this->param($key, $default);
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
+     * Obtiene solo los campos especificados
+     */
+    public function only(array $keys): array
+    {
+        return array_intersect_key($this->allParams(), array_flip($keys));
+    }
+
+    /**
+     * Obtiene todos los campos excepto los especificados
+     */
+    public function except(array $keys): array
+    {
+        return array_diff_key($this->allParams(), array_flip($keys));
     }
 }

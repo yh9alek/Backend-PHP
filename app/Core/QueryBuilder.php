@@ -31,6 +31,9 @@ class QueryBuilder
         $this->pdo = Database::getInstance();
     }
 
+    /**
+     * @param $joins Ejemplo: ['type' => 'INNER', 'table' => 'ca_perfil', 'on' => 'ca_usuario.idperfil = ca_perfil.idperfil']
+     */
     public function select(
         string $table,
         array  $columns = ['*'],
@@ -81,7 +84,7 @@ class QueryBuilder
             ob_start();
             print_r($params);
             $params = ob_get_clean();
-            file_put_contents(__DIR__ . '/../logs/db.txt', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\nPARAMS: $params \n\n", FILE_APPEND);
+            file_put_contents(__DIR__ . '/../../logs/db.log', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\nPARAMS: $params \n\n", FILE_APPEND);
         }
 
         return $response;
@@ -144,7 +147,7 @@ class QueryBuilder
             $totalRows = (int) $totalStmt->fetch(PDO::FETCH_OBJ)->total;
         } catch (PDOException $e) {
             $response->msg = "Error al contar registros";
-            file_put_contents(__DIR__ . '/../logs/db.txt', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\n", FILE_APPEND);
+            file_put_contents(__DIR__ . '/../../logs/db.log', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\n", FILE_APPEND);
             return $response;
         }
 
@@ -189,7 +192,7 @@ class QueryBuilder
             ob_start();
             print_r($params);
             $params = ob_get_clean();
-            file_put_contents(__DIR__ . '/../logs/db.txt', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\nPARAMS: $params \n\n", FILE_APPEND);
+            file_put_contents(__DIR__ . '/../../logs/db.log', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\nPARAMS: $params \n\n", FILE_APPEND);
         }
 
         return $response;
@@ -224,7 +227,7 @@ class QueryBuilder
             ob_start();
             print_r($data);
             $data = ob_get_clean();
-            file_put_contents(__DIR__ . '/../logs/db.txt', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\nPARAMS: $data \n\n", FILE_APPEND);
+            file_put_contents(__DIR__ . '/../../logs/db.log', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\nPARAMS: $data \n\n", FILE_APPEND);
         }
 
         return $response;
@@ -277,7 +280,7 @@ class QueryBuilder
             $response->data = $stmt->rowCount();
         } catch (PDOException $e) {
             $response->msg = "Error en la inserción masiva";
-            file_put_contents(__DIR__ . '/../logs/db.txt', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\n", FILE_APPEND);
+            file_put_contents(__DIR__ . '/../../logs/db.log', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\n", FILE_APPEND);
         }
 
         return $response;
@@ -319,7 +322,7 @@ class QueryBuilder
             ob_start();
             print_r($params);
             $params = ob_get_clean();
-            file_put_contents(__DIR__ . '/../logs/db.txt', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\nPARAMS: $params \n\n", FILE_APPEND);
+            file_put_contents(__DIR__ . '/../../logs/db.log', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\nPARAMS: $params \n\n", FILE_APPEND);
         }
 
         return $response;
@@ -351,7 +354,7 @@ class QueryBuilder
             ob_start();
             print_r($params);
             $params = ob_get_clean();
-            file_put_contents(__DIR__ . '/../logs/db.txt', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\nPARAMS: $params \n\n", FILE_APPEND);
+            file_put_contents(__DIR__ . '/../../logs/db.log', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\nPARAMS: $params \n\n", FILE_APPEND);
         }
 
         return $response;
@@ -458,7 +461,7 @@ class QueryBuilder
             ob_start();
             print_r($params);
             $params = ob_get_clean();
-            file_put_contents(__DIR__ . '/../logs/db.txt', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\nPARAMS: $params \n\n", FILE_APPEND);
+            file_put_contents(__DIR__ . '/../../logs/db.log', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\nPARAMS: $params \n\n", FILE_APPEND);
         }
 
         return $response;
@@ -511,7 +514,7 @@ class QueryBuilder
             ob_start();
             print_r($inParams);
             $params = ob_get_clean();
-            file_put_contents(__DIR__ . '/../logs/db.txt', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\nPARAMS: $params \n\n", FILE_APPEND);
+            file_put_contents(__DIR__ . '/../../logs/db.log', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\nPARAMS: $params \n\n", FILE_APPEND);
             throw new Exception('Errors');
         }
 

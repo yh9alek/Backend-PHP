@@ -5,17 +5,13 @@ namespace app\Controllers;
 use app\Core\QueryBuilder;
 use app\Core\Request;
 use app\Core\Response;
+use app\Core\Validator;
 use app\Helpers\Uuid;
 use app\Models\UserModel;
 
-use function app\helpers\formatearFecha;
-
-/**
- * Controlador RESTful para el recurso "usuarios".
- * Ya no renderiza HTML, solo devuelve JSON.
- */
 class UsuariosController extends BaseController
 {
+
     /**
      * GET /api/usuarios
      */
@@ -40,7 +36,7 @@ class UsuariosController extends BaseController
             page: $page,
             perPage: $limit,
             columns: [
-                'u.uuid',  // UUID en lugar de ID
+                'u.uuid',
                 "CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno) as nombreCompleto",
                 'u.username',
                 'u.email',
@@ -78,37 +74,49 @@ class UsuariosController extends BaseController
     {
         $uuid = $request->param('id');
 
-        if (!Uuid::isValid($uuid)) {
-            return $this->error('UUID inválido', 400);
+        $validator = Validator::make(
+            ['uuid' => $uuid],
+            ['uuid' => 'required|uuid']
+        );
+
+        if ($validator->fails()) {
+            return $this->json($validator->getErrorResponse(), 400);
         }
 
-        $user = UserModel::with(['profile', 'area'])
-            ->whereUuid($uuid)
-            ->limit(1)
-            ->get()[0] ?? null;
+        $db = new QueryBuilder();
+        $response = $db->select(
+            table: 'user u',
+            columns: [
+                'u.uuid', 
+                'u.username', 
+                'u.email', 
+                'u.nombre', 
+                'u.apellido_paterno', 
+                'u.apellido_materno', 
+                'u.telefono', 
+                'p.name',
+                'DATE_FORMAT(u.created_at, "%d/%m/%Y %T") created_at',
+                'DATE_FORMAT(u.updated_at, "%d/%m/%Y %T") updated_at',
+            ],
+            joins: [
+                ['type' => 'INNER', 'table' => 'profile p', 'on' => 'u.profile_id = p.id']
+            ],
+            where: 'u.uuid = :uuid',
+            params: ['uuid' => $uuid]
+        );
 
-        if (!$user) {
+        if (!$response->success) {
             return $this->json([
                 'success' => false,
-                'error' => 'Usuario no encontrado'
+                'error' => 'Usuario no encontrado.'
             ], 404);
         }
 
+        $data = $response->data;
+
         return $this->json([
             'success' => true,
-            'data' => [
-                'uuid'     => $user->uuid,
-                'username' => $user->username,
-                'email'    => $user->email,
-                'nombre'   => $user->nombre,
-                'apellido_paterno' => $user->apellidoPaterno,
-                'apellido_materno' => $user->apellidoMaterno,
-                'telefono' => $user->telefono,
-                'profile'  => $user->profile ?? null,
-                'area'     => $user->area ?? null,
-                'created_at' => formatearFecha($user->createdAt),
-                'updated_at' => formatearFecha($user->updatedAt),
-            ]
+            'data' => $data,
         ]);
     }
 
@@ -117,46 +125,54 @@ class UsuariosController extends BaseController
      */
     public function store(Request $request): Response
     {
-        if (($response = $this->validate($request, [
-            'username',
-            'email',
-            'profile_id',
-            'area_id',
-            'nombre',
-            'apellido_paterno'
-        ]))->statusCode != 200) {
-            return $response;
+        $db = new QueryBuilder();
+        
+        // Validar datos y resolver UUIDs a IDs
+        $validator = Validator::make($request->allParams(), [
+            'username'         => 'required|max:50',
+            'profile_id'       => 'required|uuid|exists:profile',  
+            'area_id'          => 'required|uuid|exists:area',
+            'nombre'           => 'required|max:50',
+            'apellido_paterno' => 'required|max:50',
+            'apellido_materno' => 'max:50',
+            'email'            => 'email|max:50',
+            'telefono'         => 'numeric|max:10',
+        ], $db);
+
+        if ($validator->fails()) {
+            return $this->json($validator->getErrorResponse(), 422);
         }
+
+        // Obtener los IDs enteros resueltos
+        $resolvedIds = $validator->getResolvedIds();
 
         extract($request->allParams());
 
+        // Preparar datos para inserción
         $data = [
             'uuid'             => Uuid::generate(),
-            'profile_id'       => $profile_id,
-            'area_id'          => $area_id,
+            'profile_id'       => $resolvedIds['profile_id'],
+            'area_id'          => $resolvedIds['area_id'],
             'nombre'           => $nombre,
             'apellido_paterno' => $apellido_paterno,
             'apellido_materno' => $apellido_materno ?? null,
             'username'         => $username,
-            'email'            => $email,
+            'email'            => $email ?? null,
             'telefono'         => $telefono ?? null,
-            'pass'             => '',
             'create_user'      => $this->getUserIdFromToken($request),
-            'created_at'       => date('Y-m-d H:i:s')
         ];
 
-        $db = new QueryBuilder();
         $result = $db->insert('user', $data);
 
         if (!$result->success) {
-            return $this->error($result->error ?? 'Error al crear usuario.', 500);
+            return $this->error($result->error ?? 'Error al crear usuario.');
         }
 
         return $this->json([
             'success' => true,
             'message' => 'Usuario creado exitosamente.',
             'data' => [
-                'uuid' => $data['uuid']  // Devolver UUID
+                'uuid' => $data['uuid']
             ]
         ], 201);
     }
@@ -164,66 +180,57 @@ class UsuariosController extends BaseController
     /**
      * PUT /api/usuarios/{uuid}
      */
-    public function updateSinORM(Request $request): Response
+    public function update(Request $request): Response
     {
         $uuid = $request->param('id');
 
-        if (!Uuid::isValid($uuid)) {
-            return $this->error('UUID inválido', 400);
+        // Validar UUID del recurso
+        $uuidValidator = Validator::make(
+            ['uuid' => $uuid],
+            ['uuid' => 'required|uuid']
+        );
+
+        if ($uuidValidator->fails()) {
+            return $this->json($uuidValidator->getErrorResponse(), 400);
         }
 
-        extract($request->allParams());
-
-        $data = [
-            'profile_id'       => $profile_id,
-            'area_id'          => $area_id,
-            'nombre'           => $nombre,
-            'apellido_paterno' => $apellido_paterno,
-            'apellido_materno' => $apellido_materno,
-            'username'         => $username,
-            'email'            => $email,
-            'telefono'         => $telefono,
-            'update_user'      => $this->getUserIdFromToken($request),
-            'updated_at'       => date('Y-m-d H:i:s')
-        ];
+        // Verificar existencia del usuario
+        if (!($user = UserModel::find($uuid))) {
+            return $this->error('Usuario no encontrado.', 404);
+        }
 
         $db = new QueryBuilder();
 
-        $result = $db->update(
-            table: 'user',
-            data: $data,
-            where: 'uuid = :uuid',
-            params: ['uuid' => $uuid]
-        );
+        // Validar datos de actualización y resolver UUIDs
+        $validator = Validator::make($request->allParams(), [
+            'username'         => 'max:50',
+            'profile_id'       => 'uuid|exists:profile',
+            'area_id'          => 'uuid|exists:area',
+            'nombre'           => 'max:50',
+            'apellido_paterno' => 'max:50',
+            'apellido_materno' => 'max:50',
+            'email'            => 'email|max:50',
+            'telefono'         => 'max:10',
+        ], $db);
 
-        if (!$result->success) {
-            return $this->error($result->error ?? 'Error al actualizar usuario.', 500);
+        if ($validator->fails()) {
+            return $this->json($validator->getErrorResponse(), 422);
         }
 
-        return $this->success(null, 'Usuario actualizado exitosamente.');
-    }
+        // Obtener los IDs resueltos
+        $resolvedIds = $validator->getResolvedIds();
 
-    /**
-     * PUT /api/usuarios/{uuid}
-     */
-    public function update(Request $request): Response
-    {
-        # Validar uuid
-        $uuid = $request->param('id');
-        if (!Uuid::isValid($uuid)) {
-            return $this->error('UUID inválido', 400);
-        }
+        // Merge de datos incluyendo los IDs enteros
+        $updateData = array_merge($request->allParams(), [
+            'profile_id' => $resolvedIds['profile_id'],
+            'area_id'    => $resolvedIds['area_id'],
+        ]);
 
-        # Verificar existencia del registro a modificar
-        if(!($user = UserModel::find($uuid))) {
-            return $this->error($result->error ?? 'Usuario no encontrado.', 500);
-        }
-
-        $user->merge($request->allParams());
+        $user->merge($updateData);
         $user->updateUser = $this->getUserIdFromToken($request);
 
         if (!$user->save()) {
-            return $this->error($result->error ?? 'Error al actualizar usuario.', 500);
+            return $this->error('Error al actualizar usuario.', 500);
         }
 
         return $this->success(null, 'Usuario actualizado exitosamente.');
@@ -236,8 +243,18 @@ class UsuariosController extends BaseController
     {
         $uuid = $request->param('id');
 
-        if (!Uuid::isValid($uuid)) {
-            return $this->error('UUID inválido', 400);
+        $validator = Validator::make(
+            ['uuid' => $uuid],
+            ['uuid' => 'required|uuid']
+        );
+
+        if ($validator->fails()) {
+            return $this->json($validator->getErrorResponse(), 400);
+        }
+
+        // Verificar existencia del usuario
+        if (!($user = UserModel::find($uuid))) {
+            return $this->error('Usuario no encontrado.', 404);
         }
 
         $success = UserModel::deleteByUuid($uuid);
@@ -251,7 +268,6 @@ class UsuariosController extends BaseController
 
     private function getUserIdFromToken(Request $request): int
     {
-        // $keycloakId = $request->userId();
         $user = UserModel::where('username', '=', $request->username())
             ->limit(1)
             ->get()[0] ?? null;

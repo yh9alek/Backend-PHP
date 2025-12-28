@@ -1,0 +1,27 @@
+@host = localhost
+@port = 8000
+@base_url = http://{{host}}:{{port}}
+
+###
+
+# @name iniciarSesion
+POST {{base_url}}/api/auth/login
+Content-Type: application/json
+
+{
+    "username": "admin@test.com",
+    "password": "Test123!"
+}
+
+###
+
+# ----- RUTAS PROTEGIDAS (AUTENTICACIÓN REQUERIDA) ----- #
+
+# @name listarPerfiles
+GET {{base_url}}/api/perfiles
+Authorization: Bearer {{iniciarSesion.response.body.data.access_token}}
+
+###
+
+# @name obtenerPerfl
+GET {{base_url}}/api/perfiles/8bd112ae-d4a5-11f0-9325-00e020a6e215
