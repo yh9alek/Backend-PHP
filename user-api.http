@@ -19,7 +19,7 @@ Content-Type: application/json
 
 # @name listarUsuarios
 GET {{base_url}}/api/usuarios
-Origin: http://localhost:9999
+Origin: http://localhost:1233
 Authorization: Bearer {{iniciarSesion.response.body.data.access_token}}
 
 ###

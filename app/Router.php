@@ -220,7 +220,7 @@ class Router
             // Valores por defecto para desarrollo
             $allowedOrigins = [
                 // Localhost con diferentes puertos
-                'https://siabi.tmaz.mx',     // Vite (puerto por defecto)
+                // 'http://localhost:5173',     // Vite (puerto por defecto)
                 'http://localhost:3000',     // React/Next.js
                 'http://localhost:4200',     // Angular
                 'http://localhost:8080',     // Vue CLI / Keycloak
