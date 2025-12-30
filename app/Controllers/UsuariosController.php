@@ -26,13 +26,13 @@ class UsuariosController extends BaseController
 
         if (!empty($search)) {
             $booleanSearch = '+' . str_replace(' ', ' +', $search) . '*';
-            $whereClause = "MATCH(u.nombre, u.apellido_paterno, u.apellido_materno, u.username, u.email) AGAINST (:search IN BOOLEAN MODE)";
+            $whereClause = "MATCH(u.nombre, u.apellido_paterno, u.apellido_materno, u.username, u.email, u.telefono) AGAINST (:search IN BOOLEAN MODE)";
             $params['search'] = $booleanSearch;
         }
 
         $db = new QueryBuilder();
         $response = $db->paginate(
-            table: 'user u',
+            table: 'usuarios u',
             page: $page,
             perPage: $limit,
             columns: [
@@ -41,19 +41,11 @@ class UsuariosController extends BaseController
                 'u.username',
                 'u.email',
                 'u.telefono',
-                'p.name AS profile',
-                'p.uuid AS profile_uuid',
-                'a.name AS area',
-                'a.uuid AS area_uuid',
                 'DATE_FORMAT(u.created_at, "%d/%m/%Y %T") created_at',
                 'DATE_FORMAT(u.updated_at, "%d/%m/%Y %T") updated_at',
             ],
             where: $whereClause,
             params: $params,
-            joins: [
-                ['type' => 'LEFT', 'table' => 'profile p', 'on' => 'u.profile_id = p.id'],
-                ['type' => 'LEFT', 'table' => 'area a',    'on' => 'u.area_id = a.id'],
-            ],
             extras: 'ORDER BY u.created_at DESC'
         );
 

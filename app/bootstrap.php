@@ -17,9 +17,6 @@ use app\Services\AuthService;
 use app\Services\MenuService;
 
 use app\Controllers\LoginController;
-use app\Controllers\AppController;
-use app\Controllers\AreaController;
-use app\Controllers\AssetsController;
 use app\Controllers\PerfilController;
 use app\Controllers\UsuariosController;
 
@@ -156,12 +153,9 @@ $container->set(AuthMiddleware::class, fn(Container $c) => new AuthMiddleware(
 # --- CONTROLADORES --- #
 
 $container->set(LoginController::class,    fn(Container $c) => new LoginController( $c ));
-$container->set(AppController::class,      fn(Container $c) => new AppController( $c ));
-$container->set(AssetsController::class,   fn(Container $c) => new AssetsController( $c ));
 
 $container->set(UsuariosController::class, fn(Container $c) => new UsuariosController( $c ));
 $container->set(PerfilController::class,   fn(Container $c) => new PerfilController( $c ));
-$container->set(AreaController::class,     fn(Container $c) => new AreaController( $c ));
 
 # ------------------------------------------
 

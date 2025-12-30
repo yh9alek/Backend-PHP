@@ -33,13 +33,7 @@ abstract class BaseController
         $dataToValidate = $request->allParams();
         $validator = Validator::make($dataToValidate, $rules);
 
-        if ($validator->fails()) {
-            // Log de validación fallida
-            Logger::warning('Validación fallida', [
-                'endpoint' => $request->uri(),
-                'errors' => $validator->getErrorResponse(),
-            ]);
-            
+        if ($validator->fails()) {            
             return $this->json($validator->getErrorResponse(), 400);
         }
 
@@ -51,16 +45,6 @@ abstract class BaseController
      */
     protected function json(array $data, int $statusCode = 200): Response
     {
-        // Log de respuestas de error
-        if ($statusCode >= 400) {
-            Logger::error('Respuesta de error', [
-                'status' => $statusCode,
-                'endpoint' => $this->request->uri(),
-                'data' => $data,
-                'user' => $this->user()?->sub ?? 'guest',
-            ]);
-        }
-
         $content = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         
         return new Response(
@@ -83,7 +67,7 @@ abstract class BaseController
     {
         $response = [
             'success' => false,
-            'error' => $message,
+            'message' => $message,
         ];
 
         if (!empty($details)) {
@@ -92,14 +76,6 @@ abstract class BaseController
                 $response['details'] = $details;
             }
         }
-
-        // Log del error
-        Logger::error($message, [
-            'status' => $statusCode,
-            'endpoint' => $this->request->uri(),
-            'details' => $details,
-            'user' => $this->user()?->sub ?? 'guest',
-        ]);
 
         return $this->json($response, $statusCode);
     }

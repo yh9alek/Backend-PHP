@@ -280,7 +280,7 @@ class QueryBuilder
             $response->data = $stmt->rowCount();
         } catch (PDOException $e) {
             $response->msg = "Error en la inserción masiva";
-            file_put_contents(__DIR__ . '/../../logs/db.log', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\nSQL: $sql \n\n", FILE_APPEND);
+            file_put_contents(__DIR__ . '/../../logs/db.log', "[ " . date('d/m/Y H:i:s A') . " ] {$e->getMessage()} \n\n", FILE_APPEND);
         }
 
         return $response;

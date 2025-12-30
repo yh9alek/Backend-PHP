@@ -4,7 +4,7 @@ namespace app\Models;
 
 class UserModel extends BaseModel
 {
-    protected static string $table = 'user';
+    protected static string $table = 'usuarios';
 
     // --- PROPIEDADES DE LA TABLA ---
     public ?int    $id = null;
@@ -42,6 +42,7 @@ class UserModel extends BaseModel
         'username',
         'email',
         'telefono',
+        'create_user'
     ];
 
     // --- MÉTODOS DE RELACIONES ---

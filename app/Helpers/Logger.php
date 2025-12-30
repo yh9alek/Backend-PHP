@@ -25,14 +25,6 @@ class Logger
     }
 
     /**
-     * Registra un error
-     */
-    public static function error(string $message, array $context = []): void
-    {
-        self::log('ERROR', $message, $context, 'responses.log');
-    }
-
-    /**
      * Registra un warning
      */
     public static function warning(string $message, array $context = []): void
