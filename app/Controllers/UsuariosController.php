@@ -60,6 +60,36 @@ class UsuariosController extends BaseController
     }
 
     /**
+     * GET /api/usuarios
+     */
+    // public function index(Request $request): Response
+    // {
+    //     $db = new QueryBuilder();
+    //     $response = $db->select(
+    //         table: 'usuarios u',
+    //         columns: [
+    //             'u.uuid',
+    //             "CONCAT_WS(' ', u.nombre, u.apellido_paterno, u.apellido_materno) as nombreCompleto",
+    //             'u.username',
+    //             'u.email',
+    //             'u.telefono',
+    //             'DATE_FORMAT(u.created_at, "%d/%m/%Y %T") created_at',
+    //             'DATE_FORMAT(u.updated_at, "%d/%m/%Y %T") updated_at',
+    //         ],
+    //         extras: 'ORDER BY u.created_at DESC'
+    //     );
+
+    //     if (!$response->success) {
+    //         return $this->error($response->error ?? 'Error al obtener usuarios.', 500);
+    //     }
+
+    //     return $this->json([
+    //         'success' => true,
+    //         'data' => $response->data
+    //     ]);
+    // }
+
+    /**
      * GET /api/usuarios/{uuid}
      */
     public function show(Request $request): Response
