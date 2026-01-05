@@ -1,8 +1,8 @@
 <?php
 
 use app\Controllers\LoginController;
+use app\Controllers\ModulosController;
 use app\Controllers\UsuariosController;
-use app\Controllers\PerfilController;
 use app\Router;
 
 /** @var Router $router */
@@ -40,12 +40,9 @@ $router->group(['prefix' => '/api', 'middleware' => ['auth']], function (Router 
     // $router->post('/usuarios/search',      [UsuariosController::class, 'search']);
     // $router->post('/usuarios/paginate',    [UsuariosController::class, 'paginate']);
 
-    // --- PERFILES ---
-    $router->get('/perfiles',              [PerfilController::class, 'index']);
-    $router->get('/perfiles/{id}',         [PerfilController::class, 'show']);
-    $router->post('/perfiles',             [PerfilController::class, 'store']);
-    $router->put('/perfiles/{id}',         [PerfilController::class, 'update']);
-    $router->delete('/perfiles/{id}',      [PerfilController::class, 'destroy']);
+    $router->get('/modulos/usuario',       [ModulosController::class, 'getUserModules']);
+    $router->get('/modulos',               [ModulosController::class, 'index']);
+    $router->get('/modulos/{id}',          [ModulosController::class, 'show']);
 
 });
 

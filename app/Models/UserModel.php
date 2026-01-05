@@ -8,7 +8,6 @@ class UserModel extends BaseModel
 
     // --- PROPIEDADES DE LA TABLA ---
     public ?int    $id = null;
-    public ?string $keycloakId = null; // NUEVO: ID de Keycloak
     public int     $profileId;
     public int     $areaId;
     public ?string $nombre = null;
@@ -42,6 +41,7 @@ class UserModel extends BaseModel
         'username',
         'email',
         'telefono',
+        'create_user'
     ];
 
     // --- MÉTODOS DE RELACIONES ---
