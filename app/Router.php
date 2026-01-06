@@ -204,7 +204,7 @@ class Router
     /**
      * Obtiene el origen permitido para CORS
      * 
-     * ✅ ACTUALIZADO: Leer desde .env y agregar todos los puertos comunes
+     * Leer desde .env y agregar todos los puertos comunes
      */
     private function getAllowedOrigin(): string
     {
@@ -220,15 +220,11 @@ class Router
             // Valores por defecto para desarrollo
             $allowedOrigins = [
                 // Localhost con diferentes puertos
-                // 'http://localhost:5173',     // Vite (puerto por defecto)
-                'http://localhost:3000',     // React/Next.js
-                'http://localhost:4200',     // Angular
+                'http://localhost:5173',     // Vite (puerto por defecto)
                 'http://localhost:8080',     // Vue CLI / Keycloak
                 
                 // 127.0.0.1 (equivalente a localhost)
-                // 'http://127.0.0.1:5173',
-                'http://127.0.0.1:3000',
-                'http://127.0.0.1:4200',
+                'http://127.0.0.1:5173',
                 'http://127.0.0.1:8080',
                 
                 // Producción (agregar los dominios)

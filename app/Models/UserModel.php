@@ -8,7 +8,6 @@ class UserModel extends BaseModel
 
     // --- PROPIEDADES DE LA TABLA ---
     public ?int    $id = null;
-    public ?string $keycloakId = null; // NUEVO: ID de Keycloak
     public int     $profileId;
     public int     $areaId;
     public ?string $nombre = null;

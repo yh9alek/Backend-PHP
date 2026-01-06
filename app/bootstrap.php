@@ -17,7 +17,7 @@ use app\Services\AuthService;
 use app\Services\MenuService;
 
 use app\Controllers\LoginController;
-use app\Controllers\PerfilController;
+use app\Controllers\ModulosController;
 use app\Controllers\UsuariosController;
 
 use Dotenv\Dotenv as ENV;
@@ -155,7 +155,8 @@ $container->set(AuthMiddleware::class, fn(Container $c) => new AuthMiddleware(
 $container->set(LoginController::class,    fn(Container $c) => new LoginController( $c ));
 
 $container->set(UsuariosController::class, fn(Container $c) => new UsuariosController( $c ));
-$container->set(PerfilController::class,   fn(Container $c) => new PerfilController( $c ));
+
+$container->set(ModulosController::class, fn(Container $c) => new ModulosController( $c ));
 
 # ------------------------------------------
 
