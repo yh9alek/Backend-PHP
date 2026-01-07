@@ -1,5 +1,6 @@
 <?php
 
+use app\Controllers\ArticulosController;
 use app\Controllers\LoginController;
 use app\Controllers\ModulosController;
 use app\Controllers\UsuariosController;
@@ -43,6 +44,8 @@ $router->group(['prefix' => '/api', 'middleware' => ['auth']], function (Router 
     $router->get('/modulos/usuario',       [ModulosController::class, 'getUserModules']);
     $router->get('/modulos',               [ModulosController::class, 'index']);
     $router->get('/modulos/{id}',          [ModulosController::class, 'show']);
+
+    $router->get('/articulos', [ArticulosController::class, 'index']);
 
 });
 

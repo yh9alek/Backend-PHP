@@ -1,6 +1,6 @@
 <?php
 
-namespace app\Services;
+namespace App\Services;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
@@ -24,6 +24,8 @@ class KeycloakService
     private string $expectedAudience;
     private array $requiredRealmRoles;
     private ?array $publicKeys = null;
+    private ?string $adminToken = null;
+    private ?int $tokenExpiry = null;
 
     public function __construct()
     {
@@ -76,7 +78,6 @@ class KeycloakService
 
         } catch (RequestException $e) {
             $statusCode = $e->getResponse()?->getStatusCode() ?? 500;
-            // $errorBody = $e->getResponse()?->getBody()->getContents() ?? 'Error desconocido';
 
             return (object)[
                 'success' => false,
@@ -155,11 +156,7 @@ class KeycloakService
             : [];
 
         if (!in_array($this->expectedAudience, $audiences, true)) {
-            throw new Exception(
-                "Token no válido para este servicio. "
-                // "Audience esperado: '{$this->expectedAudience}', " .
-                // "Audiences en token: [" . implode(', ', $audiences) . "]"
-            );
+            throw new Exception("Token no válido para este servicio.");
         }
     }
 
@@ -180,9 +177,7 @@ class KeycloakService
 
         foreach ($this->requiredRealmRoles as $requiredRole) {
             if (!in_array($requiredRole, $userRealmRoles, true)) {
-                throw new Exception(
-                    "No tienes acceso a este sistema."
-                );
+                throw new Exception("No tienes acceso a este sistema.");
             }
         }
     }
@@ -474,5 +469,205 @@ class KeycloakService
     public function getUserId(stdClass $decodedToken): ?string
     {
         return $decodedToken->sub ?? null;
+    }
+
+    // ========================================================================
+    // NUEVOS MÉTODOS PARA ADMIN API
+    // ========================================================================
+
+    /**
+     * Obtiene un token de administrador usando client credentials.
+     * El token se cachea en memoria durante su tiempo de vida.
+     * 
+     * @return string
+     * @throws Exception
+     */
+    private function getAdminToken(): string
+    {
+        // Si ya tenemos un token válido, lo retornamos
+        if ($this->adminToken && $this->tokenExpiry && time() < $this->tokenExpiry) {
+            return $this->adminToken;
+        }
+
+        try {
+            $response = $this->httpClient->post("/realms/{$this->realm}/protocol/openid-connect/token", [
+                'form_params' => [
+                    'grant_type'    => 'client_credentials',
+                    'client_id'     => $this->clientId,
+                    'client_secret' => $this->clientSecret
+                ]
+            ]);
+
+            $data = json_decode($response->getBody()->getContents());
+
+            if (!isset($data->access_token)) {
+                throw new Exception('Token de acceso no encontrado en la respuesta de Keycloak');
+            }
+
+            $this->adminToken = $data->access_token;
+            // Guardamos el tiempo de expiración (restamos 30 segundos para renovar antes)
+            $this->tokenExpiry = time() + ($data->expires_in ?? 300) - 30;
+
+            return $this->adminToken;
+
+        } catch (GuzzleException $e) {
+            error_log("Error al obtener token de administrador: " . $e->getMessage());
+            throw new Exception("Error al obtener token de administrador de Keycloak");
+        }
+    }
+
+    /**
+     * Obtiene información de un usuario por su UUID usando el Admin API.
+     * 
+     * @param string $userId UUID del usuario en Keycloak
+     * @return array|null Array con información del usuario o null si no existe
+     */
+    public function getUserById(string $userId): ?array
+    {
+        try {
+            $token = $this->getAdminToken();
+
+            $response = $this->httpClient->get("/admin/realms/{$this->realm}/users/{$userId}", [
+                'headers' => [
+                    'Authorization' => "Bearer {$token}",
+                    'Content-Type'  => 'application/json'
+                ]
+            ]);
+
+            $user = json_decode($response->getBody()->getContents(), true);
+
+            return [
+                'id'               => $user['id'],
+                'username'         => $user['username'],
+                'email'            => $user['email'] ?? '',
+                'firstName'        => $user['firstName'] ?? '',
+                'lastName'         => $user['lastName'] ?? '',
+                'fullName'         => trim(($user['firstName'] ?? '') . ' ' . ($user['lastName'] ?? '')),
+                'enabled'          => $user['enabled'] ?? false,
+                'emailVerified'    => $user['emailVerified'] ?? false,
+                'createdTimestamp' => $user['createdTimestamp'] ?? null
+            ];
+
+        } catch (RequestException $e) {
+            // Usuario no encontrado
+            if ($e->getResponse()?->getStatusCode() === 404) {
+                return null;
+            }
+            
+            error_log("Error al obtener usuario de Keycloak: " . $e->getMessage());
+            return null;
+
+        } catch (Exception $e) {
+            error_log("Error al obtener usuario de Keycloak: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Obtiene información de múltiples usuarios por sus UUIDs.
+     * 
+     * @param array $userIds Array de UUIDs de usuarios
+     * @return array Array asociativo [userId => userData]
+     */
+    public function getUsersByIds(array $userIds): array
+    {
+        $usuarios = [];
+
+        foreach ($userIds as $userId) {
+            if (empty($userId)) {
+                continue;
+            }
+
+            $user = $this->getUserById($userId);
+            if ($user) {
+                $usuarios[$userId] = $user;
+            }
+        }
+
+        return $usuarios;
+    }
+
+    /**
+     * Busca usuarios por username, email, firstName o lastName.
+     * 
+     * @param string $search Término de búsqueda
+     * @param int $max Número máximo de resultados (default: 10)
+     * @return array Array de usuarios encontrados
+     */
+    public function searchUsers(string $search, int $max = 10): array
+    {
+        try {
+            $token = $this->getAdminToken();
+
+            $response = $this->httpClient->get("/admin/realms/{$this->realm}/users", [
+                'headers' => [
+                    'Authorization' => "Bearer {$token}",
+                    'Content-Type'  => 'application/json'
+                ],
+                'query' => [
+                    'search' => $search,
+                    'max'    => $max
+                ]
+            ]);
+
+            $users = json_decode($response->getBody()->getContents(), true);
+
+            return array_map(function($user) {
+                return [
+                    'id'        => $user['id'],
+                    'username'  => $user['username'],
+                    'email'     => $user['email'] ?? '',
+                    'firstName' => $user['firstName'] ?? '',
+                    'lastName'  => $user['lastName'] ?? '',
+                    'fullName'  => trim(($user['firstName'] ?? '') . ' ' . ($user['lastName'] ?? '')),
+                    'enabled'   => $user['enabled'] ?? false
+                ];
+            }, $users);
+
+        } catch (Exception $e) {
+            error_log("Error al buscar usuarios: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Obtiene todos los roles de realm asignados a un usuario.
+     * 
+     * @param string $userId UUID del usuario
+     * @return array Array de nombres de roles
+     */
+    public function getUserRealmRolesById(string $userId): array
+    {
+        try {
+            $token = $this->getAdminToken();
+
+            $response = $this->httpClient->get("/admin/realms/{$this->realm}/users/{$userId}/role-mappings/realm", [
+                'headers' => [
+                    'Authorization' => "Bearer {$token}",
+                    'Content-Type'  => 'application/json'
+                ]
+            ]);
+
+            $roles = json_decode($response->getBody()->getContents(), true);
+
+            return array_map(fn($role) => $role['name'], $roles);
+
+        } catch (Exception $e) {
+            error_log("Error al obtener roles del usuario: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Verifica si un usuario tiene un rol específico de realm por su UUID.
+     * 
+     * @param string $userId UUID del usuario
+     * @param string $roleName Nombre del rol a verificar
+     * @return bool
+     */
+    public function userHasRealmRole(string $userId, string $roleName): bool
+    {
+        $roles = $this->getUserRealmRolesById($userId);
+        return in_array($roleName, $roles, true);
     }
 }
