@@ -9,19 +9,19 @@ ENV::createImmutable(__DIR__)->load();
 
 # -----------------------------------------------------------
 
-use app\Factories\UserFactory;
+use app\Factories\ArticuloFactory;
 
 echo "Iniciando el seeder...\n";
 
-$userFactory = new UserFactory();
-$numberOfUsersToCreate = 25000;
+$articuloFactory = new ArticuloFactory();
+$cantidad = 25000;
 
-echo "Creando $numberOfUsersToCreate usuarios...\n";
+echo "Creando $cantidad usuarios...\n";
 
-$result = $userFactory->create($numberOfUsersToCreate);
+$result = $articuloFactory->create($cantidad);
 
 if (is_array($result) && !empty($result)) {
-    echo "¡Seeding completado con éxito! Se han creado " . count($result) . " usuarios.\n";
+    echo "¡Seeding completado con éxito!";
 } else {
     echo "¡ERROR DURANTE EL SEEDING! El seeder no pudo crear los registros.\n";
 }
