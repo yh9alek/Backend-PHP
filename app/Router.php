@@ -171,7 +171,7 @@ class Router
         return new Response(
             content: json_encode([
                 'success' => false,
-                'error' => 'Endpoint no encontrado',
+                'message' => 'Endpoint no encontrado',
                 'code' => 404
             ]),
             statusCode: 404,

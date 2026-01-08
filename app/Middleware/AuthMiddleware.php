@@ -40,7 +40,7 @@ class AuthMiddleware
             $decodedToken = $this->keycloakService->validateToken($token);
 
             if (isset($decodedToken->success) && !$decodedToken->success) {
-                return $this->forbiddenResponse('Token inválido o no tienes acceso a este sistema.');
+                return $this->forbiddenResponse('Token inválido.');
             }
 
             // 3. Agregar información del usuario al request para uso posterior

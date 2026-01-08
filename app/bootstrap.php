@@ -3,6 +3,7 @@
 // 1. Cargar el autoloader de Composer
 require_once __DIR__.'/../vendor/autoload.php';
 
+use app\Controllers\ArticulosController;
 use app\Router;
 
 use app\Core\Container;
@@ -157,6 +158,7 @@ $container->set(LoginController::class,    fn(Container $c) => new LoginControll
 $container->set(UsuariosController::class, fn(Container $c) => new UsuariosController( $c ));
 
 $container->set(ModulosController::class, fn(Container $c) => new ModulosController( $c ));
+$container->set(ArticulosController::class, fn(Container $c) => new ArticulosController( $c ));
 
 # ------------------------------------------
 
